@@ -11,19 +11,44 @@ async function run() {
   // Number of features (remove label column)
   const numOfFeatures = (await trainDataset.columnNames()).length - 1;
 
+  const normalizeDataset = () => {
+    let sampleSoFar = 0;
+    let sumSoFar = 0;
+    return (x) => {
+      sampleSoFar += 1;
+      sumSoFar += x;
+      const estimatedMean = sumSoFar / sampleSoFar;
+      return x - estimatedMean;
+    };
+  };
+
   // Prepare data
   // Convert xs(features) and ys(labels) from object form (keyed by column name) to array form.
   const flattenedTrainDataset = trainDataset
+    // on mélange par tranches de 10
+    .shuffle(10)
+    // on prend les 180 premiers
+    .take(5)
+    // normalisation
+    // .map(({ xs, ys }) => normalizeDataset({xs, ys}))
     .map(({ xs, ys }) => ({ xs: Object.values(xs), ys: Object.values(ys) }))
     .batch(10);
+
   const flattenedTestDataset = testDataset
+    // on mélange par tranches de 10
+    .shuffle(10)
+    // on saute les 180 premiers
+    .skip(180)
+    // normalisation
     .map(({ xs, ys }) => ({ xs: Object.values(xs), ys: Object.values(ys) }))
     .batch(10);
 
-  // flattenedDataset.forEachAsync((res) => {
-  //   console.log(res);
-  // });
+  // normalize = (caracteristique - moyenne(caracteristique)) / ecart(caracteristique)
 
+  await flattenedTrainDataset.forEachAsync((res) => {
+    console.log(res);
+  });
+  /*
   // Define the model (best params with hyperparameters finder)
   const model = tf.sequential();
   model.add(tf.layers.dense({ inputShape: [numOfFeatures], units: 80, activation: "relu" }));
@@ -51,6 +76,7 @@ async function run() {
   model.predict(tf.tensor2d([0.06129, 20, 3.33, 1, 0.4429, 7.645, 49.7, 5.2119, 5, 216, 14.9, 3.01], [1, 12])).print();
   model.predict(tf.tensor2d([0.05425, 0, 4.05, 0, 0.51, 6.315, 73.4, 3.3175, 5, 296, 16.6, 6.29], [1, 12])).print();
   model.predict(tf.tensor2d([2.63548, 0, 9.9, 0, 0.544, 4.973, 37.8, 2.5194, 4, 304, 18.4, 12.64], [1, 12])).print();
+*/
 }
 
 module.exports = run;
