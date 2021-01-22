@@ -15,14 +15,14 @@ function run() {
   // create model
   const model = tf.sequential();
   // create hidden layer
-  model.add(tf.layers.dense({ inputShape: [1], units: 50, activation: "sigmoid" }));
-  model.add(tf.layers.dense({ inputShape: [50], units: 1 }));
+  model.add(tf.layers.dense({ inputShape: [1], units: 35, activation: "relu" }));
+  model.add(tf.layers.dense({ inputShape: [35], units: 1 }));
   // compile the model
   model.compile({ optimizer: "adam", loss: "meanSquaredError" });
 
   (async () => {
     // train the model
-    await model.fit(trainTensors.sizeMB, trainTensors.timeSec, { epochs: 50 });
+    await model.fit(trainTensors.sizeMB, trainTensors.timeSec, { epochs: 600 });
     // evaluate the model with test data
     model.evaluate(testTensors.sizeMB, testTensors.timeSec).print();
     // predict on new data
