@@ -36,8 +36,23 @@ class HyperParamsTitanic extends HyperParams {
     model.compile({
       optimizer: typeof optimizer === "function" ? optimizer(learningRate) : optimizer,
       loss,
+      metrics: ["accuracy"],
     });
     return model;
+  }
+
+  async trainModel({ model, epochs }) {
+    let history = null;
+    for (let i = 1; i <= epochs; i++) {
+      console.log(`Epoch n° ${i} / ${epochs}`);
+      if (this.input && this.label) {
+        history = await model.fit(this.input, this.label, { epochs: 1 });
+      }
+      if (this.dataset) {
+        history = await model.fitDataset(this.dataset, { epochs: 1 });
+      }
+    }
+    return history.history.acc[0];
   }
 }
 

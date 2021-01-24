@@ -60,11 +60,11 @@ class HyperParams {
         history = await model.fitDataset(this.dataset, { epochs: 1 });
       }
     }
-    return history.history;
+    return history.history.loss[0];
   }
 
   async findHyperParams() {
-    let bestloss = 10000;
+    let bestMetric = 10000;
 
     for (const params of this.generateCombinations()) {
       const [optimizer, learningRate, loss, activation, units, epochs] = params;
@@ -76,13 +76,13 @@ class HyperParams {
         optimizer: optimizer.fn,
         units,
       });
-      const history = await this.trainModel({ model, epochs });
-      if (history.loss[0] < bestloss) {
-        bestloss = history.loss[0];
+      const metric = await this.trainModel({ model, epochs });
+      if (metric < bestMetric) {
+        bestMetric = metric;
         this.model = model;
         this.hyperparams = {
           ...this.hyperparams,
-          bestloss,
+          bestMetric,
           learningRate,
           activation,
           optimizer: optimizer.label,
@@ -91,6 +91,7 @@ class HyperParams {
           epochs,
         };
       }
+      console.log(this.getHyperparams());
     }
   }
 

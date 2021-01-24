@@ -11,17 +11,6 @@ async function run() {
   // Number of features (remove label column)
   const numOfFeatures = (await trainDataset.columnNames()).length - 1;
 
-  const normalizeDataset = () => {
-    let sampleSoFar = 0;
-    let sumSoFar = 0;
-    return (x) => {
-      sampleSoFar += 1;
-      sumSoFar += x;
-      const estimatedMean = sumSoFar / sampleSoFar;
-      return x - estimatedMean;
-    };
-  };
-
   // Prepare data
   // Convert xs(features) and ys(labels) from object form (keyed by column name) to array form.
   const flattenedTrainDataset = trainDataset
