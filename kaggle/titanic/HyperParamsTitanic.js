@@ -1,6 +1,5 @@
 const tf = require("@tensorflow/tfjs-node-gpu");
-const { optimizers } = require("../HyperParams");
-const { HyperParams } = require("../HyperParams");
+const { optimizers, HyperParams } = require("../../HyperParams");
 
 class HyperParamsTitanic extends HyperParams {
   constructor(
@@ -30,7 +29,7 @@ class HyperParamsTitanic extends HyperParams {
   createModel({ numOfFeatures, learningRate, activation, loss, optimizer, units }) {
     const model = tf.sequential();
     model.add(tf.layers.dense({ inputShape: [numOfFeatures], units, activation }));
-    model.add(tf.layers.dense({ units, activation }));
+    // model.add(tf.layers.dense({ units, activation }));
     // care with classification we need last layer activation sigmoid
     model.add(tf.layers.dense({ activation: "sigmoid", units: 1 }));
     model.compile({

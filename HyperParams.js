@@ -39,6 +39,7 @@ class HyperParams {
   }
 
   createModel({ numOfFeatures, learningRate, activation, loss, optimizer, units }) {
+    // basic model, override this method
     const model = tf.sequential();
     model.add(tf.layers.dense({ inputShape: [numOfFeatures], units, activation }));
     model.add(tf.layers.dense({ inputShape: [units], units: 1 }));
@@ -50,6 +51,7 @@ class HyperParams {
   }
 
   async trainModel({ model, epochs }) {
+    // basic training, override this method if needed
     let history = null;
     for (let i = 1; i <= epochs; i++) {
       console.log(`Epoch n° ${i} / ${epochs}`);
@@ -64,7 +66,7 @@ class HyperParams {
   }
 
   async findHyperParams() {
-    let bestMetric = 10000;
+    let bestMetric = 100000000;
 
     for (const params of this.generateCombinations()) {
       const [optimizer, learningRate, loss, activation, units, epochs] = params;

@@ -1,7 +1,7 @@
 const tf = require("@tensorflow/tfjs-node-gpu");
 const fs = require("fs");
 const HyperParamsHousePrices = require("./HyperParamsHousePrices");
-const createDatasetFromCSV = require("./generateData");
+const { createTrainData, createTestData } = require("./generateData");
 const { optimizers } = require("../../HyperParams");
 
 const trainDataCsvUrl =
@@ -9,24 +9,26 @@ const trainDataCsvUrl =
 const testDataCsvUrl =
   "file:///home/romain/workspace/tensorflowjs/kaggle/houseprices/data/test.csv";
 
-run();
-
 async function run() {
-  const { dataSet: trainDataset, numOfFeatures } = await createDatasetFromCSV(trainDataCsvUrl);
+  const { dataSet: trainDataset, numOfFeatures } = await createTrainData(trainDataCsvUrl);
   // const { dataSet: validateDataset } = await createDatasetFromCSV(trainDataCsvUrl, {
   //   validate: true,
   // });
   // const { dataSet: testDataset } = await createDatasetFromCSV(testDataCsvUrl, { test: true });
 
+  // trainDataset.forEachAsync((t) => {
+  //     console.log(t.xs.arraySync())
+  // });
   // Search best hyperparams
   const hyperParams = new HyperParamsHousePrices(
     { dataset: trainDataset, inputSize: numOfFeatures },
     {
-      epochs: [100],
-      units: [350],
+      epochs: [200],
+      units: [60],
       activation: ["relu"],
-      loss: ["meanSquaredError"],
-      // learningRate: [0.001, 0.0001, 0.00001],
+      // meanAbsoluteError
+      loss: ["meanSquaredError", "meanAbsoluteError"],
+      learningRate: [0.1,0.01,0.001],
       // optimizer: [optimizers.sgd, optimizers.adam],
     }
   );

@@ -10,8 +10,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@tensorflow/tfjs-node": "^2.8.4",
-    "@tensorflow/tfjs-node-gpu": "^2.8.4",
+    "@tensorflow/tfjs-node": "^3.0.0",
+    "@tensorflow/tfjs-node-gpu": "^3.0.0",
     "danfojs-node": "^0.1.10"
   },
   "devDependencies": {

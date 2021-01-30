@@ -1,9 +1,17 @@
 const tf = require("@tensorflow/tfjs-node-gpu");
 
-async function createDatasetFromCSV(url, { test, validate } = { test: false, validate: false }) {
-  // const numOfFeatures = (await dataset.columnNames()).length - 1;
-  const numOfFeatures = 9;
-  const configColumns = {
+const mapValue = (val) => {
+  return {
+    ...val,
+    Sex: val.Sex === "male" ? 0 : 1,
+    Age: val.Age ? val.Age : 29,
+    Fare: Math.log1p(val.Fare),
+    // Name: findTitle(val.Name),
+  };
+};
+
+async function createTrainData(url) {
+  const columnConfigs = {
     Survived: { isLabel: true },
     Pclass: { isLabel: false },
     Sex: { isLabel: false },
@@ -11,60 +19,60 @@ async function createDatasetFromCSV(url, { test, validate } = { test: false, val
     SibSp: { isLabel: false },
     Parch: { isLabel: false },
     Fare: { isLabel: false },
-    Name: { isLabel: false },
+    // Name: { isLabel: false },
   };
-
-  const mapXs = (xs, min, max, meanAge, std) => {
-    return {
-      Sex: xs.Sex === "male" ? 0 : 1,
-      Fare: Math.log1p(xs.Fare),
-      Age: xs.Age
-        ? normalizeMeanStd(xs.Age, meanAge, std)
-        : normalizeMeanStd(meanAge, meanAge, std),
-      SibSp: xs.SibSp,
-      Parch: xs.Parch,
-      Name: findTitle(xs.Name),
-      Pclass1: xs.Pclass === 1 ? 1 : 0,
-      Pclass2: xs.Pclass === 2 ? 1 : 0,
-      Pclass3: xs.Pclass === 3 ? 1 : 0,
-    };
-  };
-
-  if (test) {
-    const { Survived, ...columnConfigs } = configColumns;
-    const dataset = tf.data.csv(url, {
-      columnConfigs,
-      configuredColumnsOnly: true,
-    });
-
-    const { mean: meanAge, std } = await meanAndStdDevOfDatasetRowTest(dataset, "Age");
-    const { min, max } = await minMaxTest(dataset, "Age");
-
-    const flattenedDataset = dataset
-      // .take(3)
-      .map((xs) => Object.values(mapXs(xs, min, max, meanAge, std)))
-      .batch(1);
-
-    return { dataSet: flattenedDataset, numOfFeatures };
-  }
-
+  const numOfFeatures = Object.values(columnConfigs).length - 1;
   const dataset = tf.data.csv(url, {
-    columnConfigs: configColumns,
+    columnConfigs,
     configuredColumnsOnly: true,
   });
 
-  const { mean: meanAge, std } = await meanAndStdDevOfDatasetRow(dataset, "Age");
-  const { min, max } = await minMax(dataset, "Age");
-
-  // Convert xs(features) and ys(labels) from object form (keyed by column name) to array form.
   const flattenedDataset = dataset
-    .shuffle(1000)
-    .skip(validate ? 700 : 0)
-    .map(({ xs, ys }) => ({
-      xs: Object.values(mapXs(xs, min, max, meanAge, std)),
-      ys: Object.values(ys),
-    }))
-    .batch(32);
+    // .shuffle(1000)
+    .map(({ xs, ys }) => {
+      return { xs: Object.values(mapValue(xs)), ys: Object.values(ys) };
+    })
+    .batch(20)
+    .map(({ xs, ys }) => {
+      return {
+        xs: xs.sub(xs.min()).div(xs.max().sub(xs.min())),
+        ys,
+      };
+    });
+
+  // flattenedDataset.forEachAsync((d) => {
+  //   console.log(d.xs.arraySync());
+  // });
+
+  return { dataSet: flattenedDataset, numOfFeatures };
+}
+
+async function createTestData(url) {
+  const columnConfigs = {
+    // Survived: { isLabel: true },
+    Pclass: { isLabel: false },
+    Sex: { isLabel: false },
+    Age: { isLabel: false },
+    SibSp: { isLabel: false },
+    Parch: { isLabel: false },
+    Fare: { isLabel: false },
+    // Name: { isLabel: false },
+  };
+  const numOfFeatures = Object.values(columnConfigs).length - 1;
+  const dataset = tf.data.csv(url, {
+    columnConfigs,
+    configuredColumnsOnly: true,
+  });
+
+  const flattenedDataset = dataset
+    // .shuffle(1000)
+    .map((xs) => {
+      return Object.values(mapValue(xs));
+    })
+    .batch(1)
+    .map((xs) => {
+      return xs.sub(xs.min()).div(xs.max().sub(xs.min()));
+    });
 
   return { dataSet: flattenedDataset, numOfFeatures };
 }
@@ -130,49 +138,4 @@ async function minMax(dataset, columnName) {
   return { min, max };
 }
 
-async function minMaxTest(dataset, columnName) {
-  let min = 0;
-  let max = 0;
-
-  await dataset.forEachAsync((xs) => {
-    if (xs[columnName] < min) min = xs[columnName];
-    if (xs[columnName] > max) max = xs[columnName];
-  });
-
-  return { min, max };
-}
-
-async function meanAndStdDevOfDatasetRowTest(dataset, columnName) {
-  let totalSamples = 0;
-  let sum = 0;
-  let mean = 0;
-  let squareDiffFromMean = 0;
-
-  await dataset.forEachAsync((xs) => {
-    const x = xs[columnName];
-    if (x != null || x !== undefined) {
-      totalSamples += 1;
-      sum += x;
-      mean = sum / totalSamples;
-      squareDiffFromMean = (mean - x) * (mean - x);
-    }
-  });
-
-  const variance = squareDiffFromMean / totalSamples;
-  const std = Math.sqrt(variance);
-
-  return { mean, std };
-}
-
-function normalizeDataset() {
-  let sampleSoFar = 0;
-  let sumSoFar = 0;
-  return (x) => {
-    sampleSoFar += 1;
-    sumSoFar += x;
-    const estimatedMean = sumSoFar / sampleSoFar;
-    return x - estimatedMean;
-  };
-}
-
-module.exports = createDatasetFromCSV;
+module.exports = { createTrainData, createTestData };

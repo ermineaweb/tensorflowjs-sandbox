@@ -11,111 +11,118 @@ const {
   RoofStyle,
 } = require("./mapColumns");
 
-async function createDatasetFromCSV(url, { test, validate } = { test: false, validate: false }) {
-  const configColumns = {
-    SalePrice: { isLabel: true },
-    MSSubClass: { isLabel: false },
-    MSZoning: { isLabel: false },
-    // LotFrontage: { isLabel: false },
-    LotArea: { isLabel: false },
-    Street: { isLabel: false },
-    Alley: { isLabel: false },
-    LotShape: { isLabel: false },
-    LandContour: { isLabel: false },
-    Utilities: { isLabel: false },
-    LotConfig: { isLabel: false },
-    LandSlope: { isLabel: false },
-    // ...
-    OverallQual: { isLabel: false },
-    OverallCond: { isLabel: false },
-    YearBuilt: { isLabel: false },
-    YearRemodAdd: { isLabel: false },
-    RoofStyle: { isLabel: false },
-    //...
-    firstFlrSF: { isLabel: false },
-    secondFlrSF: { isLabel: false },
-    LowQualFinSF: { isLabel: false },
-    GrLivArea: { isLabel: false },
-    //...
-    TotRmsAbvGrd: { isLabel: false },
-    //...
-    Fireplaces: { isLabel: false },
-    //...
-    GarageArea: { isLabel: false },
-    //...
-    PoolArea: { isLabel: false },
+const configColumns = {
+  SalePrice: { isLabel: true },
+  // MSSubClass: { isLabel: false },
+  // MSZoning: { isLabel: false },
+  // // LotFrontage: { isLabel: false },
+  // LotArea: { isLabel: false },
+  // Street: { isLabel: false },
+  // Alley: { isLabel: false },
+  // LotShape: { isLabel: false },
+  // LandContour: { isLabel: false },
+  // Utilities: { isLabel: false },
+  // LotConfig: { isLabel: false },
+  // LandSlope: { isLabel: false },
+  // // ...
+  // OverallQual: { isLabel: false },
+  // OverallCond: { isLabel: false },
+  // YearBuilt: { isLabel: false },
+  // YearRemodAdd: { isLabel: false },
+  // RoofStyle: { isLabel: false },
+  // //...
+  // firstFlrSF: { isLabel: false },
+  // secondFlrSF: { isLabel: false },
+  // LowQualFinSF: { isLabel: false },
+  // GrLivArea: { isLabel: false },
+  // //...
+  // TotRmsAbvGrd: { isLabel: false },
+  // //...
+  // Fireplaces: { isLabel: false },
+  // //...
+  // GarageArea: { isLabel: false },
+  // //...
+  // PoolArea: { isLabel: false },
+  TotalBsmtSF:{isLabel: false}
+};
+
+const mapValue = (val) => {
+  return {
+    ...val,
+    // MSSubClass: val.MSSubClass,
+    // MSZoning: MSZoning(val.MSZoning),
+    // // LotFrontage: xs.LotFrontage,
+    // LotArea: val.LotArea,
+    // Street: Street(val.Street),
+    // Alley: Alley(val.Alley),
+    // LotShape: LotShape(val.LotShape),
+    // LandContour: LandContour(val.LandContour),
+    // Utilities: Utilities(val.Utilities),
+    // LotConfig: LotConfig(val.LotConfig),
+    // LandSlope: LandSlope(val.LandSlope),
+    // // ...
+    // OverallQual: val.OverallQual,
+    // OverallCond: val.OverallCond,
+    // YearBuilt: val.YearBuilt,
+    // YearRemodAdd: val.YearRemodAdd,
+    // RoofStyle: RoofStyle(val.RoofStyle),
+    // //...
+    // firstFlrSF: val.firstFlrSF,
+    // secondFlrSF: val.secondFlrSF,
+    // LowQualFinSF: val.LowQualFinSF,
+    // GrLivArea: val.GrLivArea,
+    // //...
+    // TotRmsAbvGrd: val.TotRmsAbvGrd,
+    // //...
+    // Fireplaces: val.Fireplaces,
+    // //...
+    // GarageArea: val.GarageArea,
+    // //...
+    // PoolArea: val.PoolArea,
   };
-  const numOfFeatures = Object.values(configColumns).length - 1;
+};
 
-  const mapXs = (xs, min, max, meanAge, std) => {
-    return {
-      MSSubClass: xs.MSSubClass,
-      MSZoning: MSZoning(xs.MSZoning),
-      // LotFrontage: xs.LotFrontage,
-      LotArea: xs.LotArea,
-      Street: Street(xs.Street),
-      Alley: Alley(xs.Alley),
-      LotShape: LotShape(xs.LotShape),
-      LandContour: LandContour(xs.LandContour),
-      Utilities: Utilities(xs.Utilities),
-      LotConfig: LotConfig(xs.LotConfig),
-      LandSlope: LandSlope(xs.LandSlope),
-      // ...
-      OverallQual: xs.OverallQual,
-      OverallCond: xs.OverallCond,
-      YearBuilt: xs.YearBuilt,
-      YearRemodAdd: xs.YearRemodAdd,
-      RoofStyle: RoofStyle(xs.RoofStyle),
-      //...
-      firstFlrSF: xs.firstFlrSF,
-      secondFlrSF: xs.secondFlrSF,
-      LowQualFinSF: xs.LowQualFinSF,
-      GrLivArea: xs.GrLivArea,
-      //...
-      TotRmsAbvGrd: xs.TotRmsAbvGrd,
-      //...
-      Fireplaces: xs.Fireplaces,
-      //...
-      GarageArea: xs.GarageArea,
-      //...
-      PoolArea: xs.PoolArea,
-    };
-  };
+const numOfFeatures = Object.values(configColumns).length - 1;
 
-  if (test) {
-    const { SalePrice, ...columnConfigs } = configColumns;
-    const dataset = tf.data.csv(url, {
-      columnConfigs,
-      configuredColumnsOnly: true,
-    });
-
-    // const { mean: meanAge, std } = await meanAndStdDevOfDatasetRowTest(dataset, "Age");
-    // const { min, max } = await minMaxTest(dataset, "Age");
-
-    const flattenedDataset = dataset
-      // .take(3)
-      .map((xs) => Object.values(mapXs(xs)))
-      .batch(1);
-
-    return { dataSet: flattenedDataset, numOfFeatures };
-  }
-
+async function createTrainData(url) {
   const dataset = tf.data.csv(url, {
-    columnConfigs: configColumns,
+    columnConfigs: { ...configColumns },
     configuredColumnsOnly: true,
   });
 
-  // const { mean: meanAge, std } = await meanAndStdDevOfDatasetRow(dataset, "Age");
-  // const { min, max } = await minMax(dataset, "Age");
+  const flattenedDataset = dataset
+    // .shuffle(1000)
+    .map(({ xs, ys }) => {
+      return { xs: Object.values(mapValue(xs)), ys: Object.values(ys) };
+    })
+    .batch(30)
+    .map(({ xs, ys }) => {
+      return {
+        xs: xs.sub(xs.min()).div(xs.max().sub(xs.min())),
+        ys,
+      };
+    });
+
+  return { dataSet: flattenedDataset, numOfFeatures };
+}
+
+async function createTestData(url) {
+  const { SalePrice, ...columnConfigs } = configColumns;
+
+  const dataset = tf.data.csv(url, {
+    columnConfigs,
+    configuredColumnsOnly: true,
+  });
 
   const flattenedDataset = dataset
-    .shuffle(3000)
-    // .skip(validate ? 700 : 0)
-    .map(({ xs, ys }) => ({
-      xs: Object.values(mapXs(xs)),
-      ys: Object.values(ys),
-    }))
-    .batch(30);
+    // .shuffle(1000)
+    .map((xs) => {
+      return Object.values(mapValue(xs));
+    })
+    .batch(1)
+    .map((xs) => {
+      return xs.sub(xs.min()).div(xs.max().sub(xs.min()));
+    });
 
   return { dataSet: flattenedDataset, numOfFeatures };
 }
@@ -226,4 +233,4 @@ function normalizeDataset() {
   };
 }
 
-module.exports = createDatasetFromCSV;
+module.exports = { createTrainData, createTestData };

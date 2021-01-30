@@ -30,15 +30,13 @@ class HyperParamsHousePrices extends HyperParams {
   createModel({ numOfFeatures, learningRate, activation, loss, optimizer, units }) {
     const model = tf.sequential();
     model.add(tf.layers.dense({ inputShape: [numOfFeatures], units, activation }));
-    model.add(tf.layers.dense({ inputShape: [numOfFeatures], units, activation }));
-    model.add(tf.layers.dense({ activation: "relu", units: 1 }));
+    model.add(tf.layers.dense({ units: 1 }));
     model.compile({
       optimizer: typeof optimizer === "function" ? optimizer(learningRate) : optimizer,
       loss,
     });
     return model;
   }
-
 }
 
 module.exports = HyperParamsHousePrices;
